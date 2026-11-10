@@ -73,31 +73,42 @@ leve** (versão parada mais próxima do visual) · **Cuidados** (defeitos conhec
 ## Canvas 2D animado
 - **Custo:** processador (desenho) e memória (canvas grande × `devicePixelRatio`).
 - **Medir:** perfil de JS (função que desenha); `--css` escondendo o canvas **não** para o JS — use uma flag.
-- **Modo leve:** menos quadros por segundo, resolução 1x, ou imagem parada.
+- **Modo leve:** menos quadros por segundo, resolução menor, ou imagem parada. **Se o canvas mostra vídeo ou quadros
+  presos à rolagem, não para:** ver `sequencia-quadros`.
 - **Cuidados:** Safari em branco (ver `safari-iphone.md`).
 - **Visto em:** Maria Festinha (abertura). — observação
 
 <!-- efeito: sequencia-quadros -->
-## Sequência de quadros trocada pela rolagem (centenas de imagens)
-- **Custo:** rede (megabytes: 477 quadros ≈ 11 MB no computador) e processador (baixar, decodificar, desenhar a cada
-  quadro de rolagem).
-- **Medir:** `erros.js` mostra o peso por aparelho; perfil de JS mostra `fetch`/`blob`/`createImageBitmap`.
-- **Modo leve:** um quadro fixo (ou o vídeo/pôster que o site já usa no celular), sem baixar os outros quadros. No
-  motor de quadros: parar de desenhar/decodificar depois do 1º quadro pintado, baixar só o 1º ao abrir, e bloquear o
-  "baixar todos" **dentro da função que libera os downloads** (não só em quem a chama).
+## Sequência de quadros trocada pela rolagem (centenas de imagens, GSAP ScrollTrigger)
+- **Regra do dono:** é vídeo, **não congela nem some no modo leve**: fica mais leve.
+- **Custo:** rede (megabytes: 477 quadros ≈ 11-21 MB no computador) e processador (baixar, decodificar, desenhar a cada
+  quadro de rolagem). Pesa mais em tela grande (PC).
+- **Medir:** `erros.js` mostra o peso por aparelho; perfil de JS mostra `fetch`/`blob`/`createImageBitmap`; contar
+  requisições de quadros com a página parada (~6 s) e depois de rolar.
+- **Modo leve (versão leve, andando):** 1 a cada 4 quadros (se os quadros foram interpolados 4×, é o ritmo do vídeo
+  original), canvas em 60% da resolução (o navegador amplia), menos quadros na memória (20 em vez de 40) e menos
+  decodificações ao mesmo tempo (2 em vez de 4), e **sem pré-download**: só baixa o que a rolagem pede. Se o modo
+  ligar no meio, o motor passa a usar esses valores na hora (ler o modo a cada passo, não só ao iniciar).
 - **Cuidados:** procure **pré-carregamentos com tempo** ("quem fica X s no site já baixa tudo"): no Maria Festinha
-  um `setTimeout` de 4,5 s depois do `load` baixava os 477 quadros mesmo no modo leve. Confira contando as requisições
-  depois de ~6 s parado.
-- **Números (Maria Festinha, computador fraco):** travadas 6,0 s → 1,2 s; peso baixado ~11,6 MB → ~2,3 MB.
-- **Visto em:** Maria Festinha (só no computador; no celular o site usa um vídeo). — confirmado (medido)
+  um `setTimeout` de 4,5 s depois do `load` baixava os 477 quadros mesmo no modo leve.
+- **Números (Maria Festinha, computador fraco, modo leve):** congelado 0,2 s de travadas (não vale: o dono quer o vídeo
+  andando); andando com 1/4 dos quadros em resolução 1x: 4,5 s; com 1/4 dos quadros em 60%: **0,4-0,5 s** (META ok).
+  Tablet e celular fracos: 0,07-0,2 s.
+- **Visto em:** Maria Festinha (só no computador e tablet; no celular o site usa um vídeo). — confirmado (medido)
 
 <!-- efeito: video-fundo -->
-## Vídeo de fundo (autoplay, mudo, em loop)
+## Vídeo de fundo ou vídeo dentro do site (autoplay, mudo, em loop)
+- **Regra do dono:** **não some nem para no modo leve**: fica mais leve.
 - **Custo:** rede e decodificação contínua.
-- **Medir:** peso no `erros.js`; pausar fora da tela (`IntersectionObserver`).
-- **Modo leve:** pôster parado (com economia de dados, nem baixar o vídeo).
+- **Medir:** peso no `erros.js`; conferir que pausa fora da tela (`IntersectionObserver`).
+- **Modo leve (versão leve, tocando):** arquivo de resolução menor (ex.: 720p em vez de 960p/1080p), tocar só com a
+  seção na tela e pausar fora dela, sem pré-carregar antes de chegar perto. Com economia de dados ligada, pode
+  começar pelo pôster e tocar ao chegar na seção.
 - **Cuidados:** iPhone exige `muted` + `playsinline`; modo economia bloqueia autoplay (ver `safari-iphone.md`).
-- **Visto em:** portfólio, Maria Festinha. — observação
+  Não esconder com `html.leve video { display: none }` (visto no portfólio, retirado).
+- **Números (portfólio, modo leve com os vídeos dos projetos tocando em 720p):** computador fraco 0,11 s, celular fraco
+  0,13 s de travadas (META ok).
+- **Visto em:** portfólio (vídeos dos projetos), Maria Festinha (vídeo da abertura no celular). — confirmado (medido)
 
 <!-- efeito: iframe-externo -->
 ## Iframe de outro site (mapa, vídeo, widget)

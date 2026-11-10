@@ -440,6 +440,13 @@
     var files = new Array(total), frames = new Array(total), inPlan = new Uint8Array(total);
     var MAXB = mobile ? 44 : 40;     // frames decodificados guardados (~2 MB cada no celular, ~6 MB no computador)
     var MAXD = mobile ? 3 : 4;       // decodificações ao mesmo tempo
+    // Modo leve: o vídeo NÃO para (regra da skill auditoria-site), fica mais leve: 1 a cada 4 frames (os frames
+    // foram interpolados 4×, então é o ritmo do vídeo original), menos frames na memória e menos decodificações
+    // ao mesmo tempo, resolução 1x, e só baixa o que a rolagem pede (sem o pré-download de ~21 MB)
+    var PASSO_LEVE = 4;
+    function passoMin() { return perf.leve ? PASSO_LEVE : 1; }
+    function maxB() { return perf.leve ? 20 : MAXB; }
+    function maxD() { return perf.leve ? 2 : MAXD; }
     var MAXF = 6;                    // downloads ao mesmo tempo
     var LOOK = mobile ? 0.3 : 0.2;   // s de movimento projetados à frente
     // amortecimento leve (s): só arredonda saltos (teclado, barra de rolagem, toque).
@@ -464,12 +471,10 @@
     enqueue(total - 1);
     for (var j0 = 0; j0 < total; j0 += 16) enqueue(j0);
     var limit = order.length;
-    if (perf.leve) limit = 2;   // modo leve desde o início: o fundo fica parado no 1º quadro (ver tick)
     [8, 4, 2, 1].forEach(function (s) { for (var j = 0; j < total; j += s) enqueue(j); });
     function fillAll() {
       if (mobile || limit === order.length) return;   // celular: o fundo é o vídeo, nada de frames
-      if (perf.leve) return;   // modo leve: o fundo fica parado (ver tick), não baixa os ~21 MB
-      limit = order.length;
+      limit = order.length;   // (no modo leve o pump só baixa os frames do passo leve)
       pump();
     }
 
@@ -523,7 +528,7 @@
 
     // guarda no máximo MAXB frames decodificados: solta primeiro os fora do plano e mais longe
     function evict() {
-      while (held > MAXB) {
+      while (held > maxB()) {
         var worst = -1, wd = -1;
         for (var j = 0; j < total; j++) {
           if (!ready(j) || !frames[j].close) continue;
@@ -544,13 +549,17 @@
         i = plan[k];
         if (files[i] === undefined && !frames[i]) fetchFile(i, true);
       }
-      for (k = 0; k < plan.length && decoding < MAXD; k++) {
+      for (k = 0; k < plan.length && decoding < maxD(); k++) {
         i = plan[k];
         if (frames[i]) continue;
         if (!bitmaps) legacy(i);
         else if (files[i] instanceof Blob) decode(i);
       }
-      while (bitmaps && fetching < MAXF && nextOrder < limit) fetchFile(order[nextOrder++], false);
+      while (bitmaps && fetching < MAXF && nextOrder < limit) {
+        var o = order[nextOrder++];
+        if (o % passoMin() && o !== total - 1) continue;   // modo leve: só 1 a cada 4
+        fetchFile(o, false);
+      }
     }
 
     // plano: frames que vão aparecer até o scroll parar, em ordem de prioridade
@@ -562,20 +571,22 @@
         if (Math.abs(glideTo - goal) > Math.abs(dest - goal)) dest = glideTo;
       }
       var b = Math.round(Math.max(0, Math.min(total - 1, dest)));
-      var dir = b >= a ? 1 : -1, step = 1;
+      var dir = b >= a ? 1 : -1, step = passoMin();
+      if (step > 1) { a -= a % step; b -= b % step; }   // modo leve: só os múltiplos do passo
       // caminho longo ou rolagem rápida (mais de 1 frame por quadro da tela): 1 a cada 2, 4, 8…
       // (sempre os mesmos múltiplos, que continuam valendo quando o passo diminui)
-      while (Math.abs(b - a) / step > MAXB - 16 || Math.abs(vel) / 60 >= step * 2) step *= 2;
+      while (Math.abs(b - a) / step > maxB() - 16 || Math.abs(vel) / 60 >= step * 2) step *= 2;
       if (a === planA && b === planB && step === planStep) return;
       planA = a; planB = b; planStep = step;
       for (var k = 0; k < plan.length; k++) inPlan[plan[k]] = 0;
       plan.length = 0;
       var add = function (i) { if (i >= 0 && i < total && !inPlan[i]) { inPlan[i] = 1; plan.push(i); } };
-      add(a); add(a + 1);
+      var pm = passoMin();
+      add(a); add(a + pm);
       for (var j = a; j !== b; j += dir) if (j % step === 0) add(j);
-      add(b); add(b + 1);
+      add(b); add(b + pm);
       // vizinhos: voltar ou seguir rolando sem engasgar
-      for (k = 1; k <= 6; k++) { add(b + dir * k); if (k <= 4) add(a - dir * k); }
+      for (k = 1; k <= 6; k++) { add(b + dir * k * pm); if (k <= 4) add(a - dir * k * pm); }
       pump();
     }
 
@@ -610,10 +621,6 @@
       var dt = Math.min(0.1, Math.max(0.001, (now - last) / 1000));
       last = now;
       if (!cw) return;
-      // modo leve: o fundo fica parado no quadro que já está na tela (o 1º, ou onde estava se
-      // o modo ligou no meio). Os painéis de texto continuam trocando com a rolagem; só param
-      // os downloads, a decodificação e o desenho de quadros, que travavam o aparelho fraco
-      if (perf.leve && painted) return;
       var goal = target * (total - 1);
       // velocidade do scroll em frames/s (suavizada): projeta o caminho à frente
       vel += ((goal - lastGoal) / dt - vel) * Math.min(1, dt * 10);
@@ -628,7 +635,7 @@
       target = p;
       // rolando dentro da Hero: agora vale baixar o resto dos frames. Quem pula direto
       // para depois dela (link do menu) não dispara; se voltar, o plano pede o que precisar
-      if (p > 0 && p < 1 && !perf.leve) fillAll();
+      if (p > 0 && p < 1) fillAll();
     }
 
     function resize() {
@@ -637,7 +644,9 @@
       // resolução do canvas: a da tela, mas nunca com mais pixels que os frames têm
       // (acima disso só gasta memória e decodificação, sem ganhar nitidez)
       var dpr = Math.min(window.devicePixelRatio || 1, 1 / Math.max(w0 / NW, h0 / NH));
-      if (perf.leve) dpr = Math.min(dpr, 1);
+      // modo leve: 60% da resolução (o navegador amplia): menos da metade do trabalho de decodificar e desenhar
+      // cada frame, e o vídeo continua andando com a rolagem
+      if (perf.leve) dpr = Math.min(dpr, 0.6);
       var w = Math.round(w0 * dpr), h = Math.round(h0 * dpr);
       if (w === cw && h === ch) return;
       // mudar o tamanho apaga o canvas: guarda a imagem da tela para redesenhá-la no
@@ -980,6 +989,7 @@
           });
           return;
         }
+        if (perf.leve) return;   // modo leve: só a rolagem pede frames (1 a cada 4), sem pré-download
         fillAll();
       }, 4500);
     });

@@ -9,8 +9,8 @@ Atualize a cada entrada nova (arquivo · título · data · status).
 - rolagem-suave · Lenis/Locomotive (tirar não melhorou) · 2026-11-10 · confirmado
 - webgl-3d · 3D/WebGL · 2026-11-10 · confirmado
 - canvas · canvas 2D animado · 2026-11-10 · observação
-- sequencia-quadros · centenas de imagens trocadas pela rolagem (+ pré-carregamento com tempo) · 2026-11-10 · confirmado
-- video-fundo · vídeo de fundo · 2026-11-10 · observação
+- sequencia-quadros · quadros presos à rolagem: no modo leve ANDA, mais leve (1/4 dos quadros, 60%) · 2026-11-10 · confirmado
+- video-fundo · vídeo de fundo/dentro do site: no modo leve TOCA, mais leve (720p, só na tela) · 2026-11-10 · confirmado
 - iframe-externo · mapa/vídeo/widget de outro site (Google Maps roda JS o tempo todo) · 2026-11-10 · confirmado
 - backdrop-filter · vidro fosco (pior caso no celular fraco; atrás de fundo opaco não aparece) · 2026-11-10 · confirmado
 - filter-blur · desfoque · 2026-11-10 · observação
