@@ -53,6 +53,10 @@ decidir: é trabalho da auditoria (passos 3 e 3b).**
   o modo **fingindo o aparelho** (as mesmas pistas que os sites usam), então funcionam em qualquer site.
 - **Todo efeito** precisa: checar o modo leve ao começar, **parar se o modo leve ligar no meio do uso** (evento do site)
   e respeitar `prefers-reduced-motion`.
+- **Confira a detecção, não só os efeitos:** o teste força o modo leve, então não prova que ele liga num celular de
+  verdade. Leia o código que liga a classe e compare com a ficha `modo-leve` de `conhecimento/efeitos.md` (pistas
+  que pegam celular atual, engasgos além da mediana, lembrar a decisão, `?leve=info` para o dono conferir no aparelho).
+  Entregue ao dono o link `?leve=info` para ele abrir no próprio celular.
 - **Limite do teste:** o navegador de teste não tem placa de vídeo. Os tempos refletem o processador, mas não o custo
   de vidro fosco, desfoque, máscara e mistura de cores, que são os que travam um celular fraco de verdade. Por isso o
   `pesados.js` é obrigatório. E WebGL/3D sai exagerado aqui (ver `conhecimento/ambiente-de-teste.md`).

@@ -21,6 +21,19 @@ leve** (versão parada mais próxima do visual) · **Cuidados** (defeitos conhec
   evento `litechange`).
 - **Cuidados:** a classe tem que existir antes da primeira pintura (senão a página pula); todo efeito confere a classe
   ao começar e escuta o evento.
+- **Detecção que falha em celular de verdade (visto: Maria Festinha, o dono reclamou que o leve não ligava):**
+  - memória ≤ 2 GB / núcleos ≤ 2 quase nunca pega celular atual (os fracos têm 3-4 GB e 8 núcleos; o iPhone nem
+    informa a memória); "sem placa de vídeo" nunca pega celular; bateria só existe no Android;
+  - medir fluidez só pela **mediana** deixa passar o aparelho que roda liso quase sempre e **engasga de vez em
+    quando** (o que a pessoa sente). Use também os engasgos: 10% ou mais dos quadros acima de 40 ms (p90), ou 3+
+    quadros acima de 100 ms numa amostra;
+  - **lembrar a decisão** (`localStorage`, 30 dias) e ligar a classe no `<head>` na próxima visita; sem isso o
+    aparelho precisa travar de novo a cada visita para ser detectado;
+  - ter `?leve=1` / `?leve=0` e uma caixinha de diagnóstico (`?leve=info`: modo, motivo, memória, núcleos, placa de
+    vídeo e as amostras de quadros) para o dono conferir no próprio celular: o teste não tem celular de verdade.
+  - Mudou o script do `<head>`: recalcule o hash na CSP (`producao.js` acusa).
+  - Teste (simulado): celular bom continua normal, celular fraco liga e a próxima visita já abre leve; celular
+    médio a ~60 FPS continua normal (correto: ele dá conta).
 - **Visto em:** portfólio, Maria Festinha. — confirmado
 
 <!-- efeito: scroll-scrub -->
