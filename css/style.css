@@ -1020,6 +1020,16 @@ html:not(.js-fold) .photo-curtain { display: none; }
    Dentro da faixa lilás do CTA final (corações, brilhos e fita por trás): cards de
    vidro claro com texto ameixa e um brilho lilás saindo da esquerda; a aberta brilha mais. */
 .final-cta.has-faq { text-align: left; padding: 90px 0 80px; }
+/* Abrir uma pergunta deixa a faixa mais alta. Com os degradês em % da altura, o fundo
+   inteiro esticava e mudava de desenho. --faq-h (js/main.js) é a altura com tudo fechado:
+   o desenho fica nesse tamanho, preso no topo, e o que cresce embaixo continua na cor
+   final do degradê (#9b7dd0), sem emenda. */
+.final-cta.has-faq {
+  --band-bg:
+    radial-gradient(ellipse 45% 80% at 50% 45%, rgba(255,255,255,.35), transparent 70%) 0 0 / 100% var(--faq-h, 100%) no-repeat,
+    linear-gradient(180deg, #c7b0ec 0%, #a88bd9 55%, #9b7dd0 100%) 0 0 / 100% var(--faq-h, 100%) no-repeat,
+    #9b7dd0;
+}
 .faq-inner { z-index: 3; }   /* o recuo do cabeçalho já vem do scroll-padding-top do html */
 .faq-inner .section-title h2 { color: #fff; text-shadow: 0 3px 14px rgba(74, 58, 107, .35); }
 .faq-inner .section-title h2::before { background: linear-gradient(90deg, transparent, #fff3cf); }

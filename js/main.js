@@ -2073,6 +2073,30 @@
     window.addEventListener('resize', check);
   })();
 
+  /* ---------- Fundo do FAQ não muda ao abrir uma pergunta ----------
+     A faixa cresce quando uma pergunta abre. O degradê (em % da altura) e os brilhos
+     (em % da camada) esticavam junto e o fundo mudava de desenho. Aqui eles ficam presos
+     na altura com tudo fechado (--faq-h, usada no CSS); o que cresce embaixo fica na cor
+     final do degradê. Abertas no meio da conta (resize) são descontadas. */
+  (function () {
+    var band = document.querySelector('.final-cta.has-faq');
+    if (!band) return;
+    function lock() {
+      var h = band.offsetHeight;
+      band.querySelectorAll('.faq details[open]').forEach(function (d) {
+        h -= d.clientHeight - d.querySelector('summary').offsetHeight;   // clientHeight: sem a borda do card
+      });
+      band.style.setProperty('--faq-h', h + 'px');
+      var field = band.querySelector('.sparkle-field');
+      if (field) { field.style.bottom = 'auto'; field.style.height = Math.max(0, h - field.offsetTop) + 'px'; }
+    }
+    lock();
+    later(lock);   // depois do arco (mais acima), que desce os brilhos para baixo dele
+    band.addEventListener('toggle', lock, true);
+    window.addEventListener('load', lock);
+    window.addEventListener('resize', lock);
+  })();
+
   // pedaços de baixo: um por tarefa, depois de tudo que monta na hora
   setTimeout(runLater, 0);
 
