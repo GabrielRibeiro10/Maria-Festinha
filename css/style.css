@@ -1133,6 +1133,11 @@ html:not(.js-fold) .photo-curtain { display: none; }
 .wa-form input::placeholder { color: var(--muted); }
 .wa-form .btn { align-self: stretch; }
 .footer-bottom { text-align: center; padding: 16px 24px; font-size: 12px; color: var(--muted); border-top: 1px solid rgba(212,169,79,.3); }
+.footer-bottom a, .form-privacy a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
+.footer-legal { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 8px; }
+.a11y-symbol { width: 22px; height: 22px; flex: none; padding: 3px; border-radius: 50%; background: var(--plum); fill: #fff; }
+.a11y-symbol path { fill: none; stroke: #fff; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.form-privacy { margin-top: 10px; font-size: 12px; line-height: 1.5; opacity: .85; }
 
 /* Botão flutuante */
 .wa-float {
