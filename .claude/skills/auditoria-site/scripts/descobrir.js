@@ -99,6 +99,24 @@ const inventario = () => {
   console.log('hospedagem: ' + (fs.existsSync(path.join(raiz, 'vercel.json')) ? 'Vercel (vercel.json)' : fs.existsSync(path.join(raiz, 'netlify.toml')) || fs.existsSync(path.join(raiz, '_headers')) ? 'Netlify' : 'não identificada (sem vercel.json)')
     + ' | 404 própria: ' + (fs.existsSync(path.join(raiz, '404.html')) ? 'sim' : 'NÃO'));
 
+  // ---- detecção do modo leve: o modelo da skill (js/modo-leve.js) no <head> de cada página ----
+  console.log('\n-- detecção automática (passo 0b)');
+  let faltam = 0;
+  for (const pg of pags) {
+    const h = fs.readFileSync(path.join(raiz, pg), 'utf8'), head = (h.split(/<\/head>/i)[0] || '');
+    const tag = (head.match(/<script[^>]*src=["'][^"']*(modo-leve|desempenho)\.js[^"']*["'][^>]*>/i) || [])[0];
+    let st;
+    // script sem defer/async no <head> roda antes da 1ª pintura (mesmo depois do CSS); página sem JavaScript nenhum
+    // (404, páginas de texto) não tem efeito para desligar
+    const temJs = /<script[^>]*\bsrc=/i.test(h);
+    if (!tag && !temJs) st = 'sem detecção, mas a página não tem JavaScript (ok se não tiver efeito pesado em CSS)';
+    else if (!tag) { st = 'NÃO tem: instale modelos/modo-leve.js (passo 0b)'; faltam++; }
+    else if (/\b(defer|async)\b/.test(tag)) { st = 'tem, mas com defer/async: tire (precisa rodar antes da 1ª pintura)'; faltam++; }
+    else st = /desempenho/.test(tag) ? 'ok (js/desempenho.js, original do portfólio)' : 'ok (js/modo-leve.js)';
+    console.log(`${pg.padEnd(22)} ${st}`);
+  }
+  if (faltam) console.log('=> detecção automática faltando ou fora do lugar: corrija ANTES de medir (SKILL.md, "Modo leve").');
+
   // ---- modo leve ----
   const n = await abre(1366, 768, 'normal'), l = await abre(1366, 768, 'leve'), q = await abre(1366, 768, 'normal', true);
   const cn = n.cedo, cl = [...new Set([...l.cedo, ...await classes(l.p)])], cq = q.cedo;

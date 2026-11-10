@@ -20,121 +20,23 @@
   function zoomed() { return !!window.visualViewport && window.visualViewport.scale > 1.01; }
   var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  /* ---------- Modo leve (economia de energia / aparelho fraco) ----------
-     Liga sozinho quando: o navegador pede economia de dados; o aparelho tem
-     pouca memória/núcleos; a bateria está baixa e fora da tomada; ou a tela
-     está rodando abaixo de ~40 FPS (economia de energia do iPhone/Android e
-     notebooks na bateria limitam a 30 FPS). O design não muda: só os efeitos
-     contínuos ficam mais baratos (brilhos, neon, mistura de frames, desfoques). */
-  // o <head> já pode ter ligado o modo leve (lembrado dos últimos 30 dias ou ?leve=1)
+  /* ---------- Modo leve (aparelho fraco) ----------
+     Quem decide é o js/modo-leve.js, no <head>, antes da 1ª pintura (modelo da skill auditoria-site,
+     mesma detecção do portfólio): placa de vídeo fraca ou sem aceleração, teste de processador,
+     memória/núcleos, economia de dados e, durante o uso, fluidez abaixo de ~25 quadros por segundo.
+     Ele põe a classe "leve" no <html> e avisa com o evento 'leve:liga' quando liga no meio do uso.
+     Aqui só seguimos: o design não muda, os efeitos pesados param ou ficam parados. */
   var html = document.documentElement;
-  var perf = { leve: html.classList.contains('leve'), gpu: '?', amostras: [] };
-  var leveForcaNormal = html.getAttribute('data-leve-forca') === '0';   // ?leve=0: sem detecção nesta visita
-  function goLite(reason) {
-    if (perf.leve || leveForcaNormal) return;
+  var perf = { leve: html.classList.contains('leve') };
+  document.addEventListener('leve:liga', function () {
+    if (perf.leve) return;
     perf.leve = true;
-    html.classList.add('leve');
-    html.setAttribute('data-leve', reason);
-    // guarda por 30 dias: na próxima visita o <head> liga o modo leve antes do 1º desenho,
-    // sem o aparelho precisar travar de novo para ser detectado
-    try { localStorage.setItem('mf-leve', JSON.stringify({ m: reason, t: Date.now() })); } catch (e) {}
-    window.dispatchEvent(new Event('levechange'));
-  }
-  // amostra de quadros (ms): lento se a MEDIANA passa de 25 ms (menos de 40 FPS) ou se há ENGASGOS:
-  // 10% ou mais dos quadros acima de 40 ms, ou 3+ quadros acima de 100 ms. Só a mediana deixava
-  // passar o celular que roda liso quase sempre e trava de vez em quando, que é o que a pessoa sente
-  function lenta(d) {
-    d = d.slice().sort(function (a, b) { return a - b; });
-    var med = d[Math.floor(d.length / 2)], p90 = d[Math.floor(d.length * 0.9)];
-    var grandes = d.filter(function (x) { return x > 100; }).length;
-    perf.amostras.push('med ' + Math.round(med) + ' p90 ' + Math.round(p90) + ' >100ms ' + grandes);
-    return med > 25 ? 'fps-baixo' : p90 > 40 ? 'engasgos' : grandes >= 3 ? 'travadas' : '';
-  }
-  if (!perf.leve && !leveForcaNormal) (function () {
-    var nav = navigator;
-    if (nav.connection && nav.connection.saveData) goLite('economia-de-dados');
-    if ((nav.deviceMemory && nav.deviceMemory <= 2) || (nav.hardwareConcurrency && nav.hardwareConcurrency <= 2)) goLite('aparelho-fraco');
-    // Sem placa de vídeo (driver genérico do Windows, área de trabalho remota, máquina
-    // virtual): o navegador desenha tudo no processador e os efeitos contínuos (brilhos
-    // piscando, desfoques) travam a rolagem, mesmo com a página a 60 FPS parada.
-    try {
-      var gl = document.createElement('canvas').getContext('webgl');
-      if (!gl) goLite('sem-placa-de-video');
-      else {
-        var info = gl.getExtension('WEBGL_debug_renderer_info');
-        var gpu = perf.gpu = String(gl.getParameter(info ? info.UNMASKED_RENDERER_WEBGL : gl.RENDERER));
-        if (/basic render|swiftshader|llvmpipe|software|softpipe/i.test(gpu)) goLite('sem-placa-de-video');
-        var lose = gl.getExtension('WEBGL_lose_context');
-        if (lose) lose.loseContext();
-      }
-    } catch (e) {}
-    if (nav.getBattery) nav.getBattery().then(function (bat) {
-      var check = function () { if (!bat.charging && bat.level <= 0.2) goLite('bateria-baixa'); };
-      check();
-      bat.addEventListener('levelchange', check);
-      bat.addEventListener('chargingchange', check);
-    }).catch(function () {});
-    // mede a taxa de quadros com a página parada (mediana de 60 quadros)
-    function sampleFps() {
-      if (perf.leve || document.hidden) return;
-      var d = [], prev = 0;
-      requestAnimationFrame(function f(t) {
-        if (prev) d.push(t - prev);
-        prev = t;
-        if (d.length < 60) return requestAnimationFrame(f);
-        var r = lenta(d); if (r) goLite(r + '-parado');
-      });
-    }
-    window.addEventListener('load', function () { setTimeout(sampleFps, 1500); setTimeout(sampleFps, 15000); });
-    // Mede também ROLANDO: parado, quase todo aparelho faz 60 FPS e o celular fraco passava
-    // batido; a travada aparece na rolagem. Junta até 3 amostras de 90 quadros com a página
-    // em movimento; se a mediana de uma delas passar de 25 ms (menos de 40 FPS), modo leve.
-    (function () {
-      var d = [], prev = 0, lastMove = 0, lastY = window.scrollY, samples = 0, running = false;
-      function frame(t) {
-        if (perf.leve || document.hidden) { running = false; prev = 0; return; }
-        var y = window.scrollY;
-        if (y !== lastY) { lastY = y; lastMove = t; }
-        if (prev && t - lastMove < 120) d.push(t - prev);   // só quadros com a página andando
-        prev = t;
-        if (d.length >= 90) {
-          var r = lenta(d); if (r) goLite(r + '-rolando');
-          d = []; samples++;
-        }
-        if (t - lastMove > 400 || samples >= 3) { running = false; prev = 0; return; }   // parou de rolar
-        requestAnimationFrame(frame);
-      }
-      function onScroll() {
-        if (running || perf.leve || samples >= 3) return;
-        running = true; lastMove = performance.now();
-        requestAnimationFrame(frame);
-      }
-      window.addEventListener('scroll', onScroll, { passive: true });
-    })();
-  })();
+    window.dispatchEvent(new Event('levechange'));   // os efeitos abaixo escutam este evento
+  });
   // aba em segundo plano: pausa as animações CSS contínuas
   document.addEventListener('visibilitychange', function () {
     html.classList.toggle('is-hidden', document.hidden);
   });
-  // ?leve=info: caixinha com o que o site detectou neste aparelho (para conferir num celular de verdade)
-  if (/[?&]leve=info/.test(location.search)) (function () {
-    var box = document.createElement('div');
-    box.setAttribute('role', 'status');
-    box.style.cssText = 'position:fixed;left:8px;right:8px;bottom:8px;z-index:9999;padding:10px 12px;border-radius:12px;' +
-      'background:rgba(40,28,64,.92);color:#fff;font:12px/1.5 system-ui,sans-serif;white-space:pre-wrap;pointer-events:none';
-    function show() {
-      var n = navigator, c = n.connection || {};
-      box.textContent = 'Modo: ' + (perf.leve ? 'LEVE (' + html.getAttribute('data-leve') + ')' : 'normal') +
-        (leveForcaNormal ? ' [forçado pelo ?leve=0]' : '') +
-        '\nMemória: ' + (n.deviceMemory ? n.deviceMemory + ' GB' : 'não informada') + ' · núcleos: ' + (n.hardwareConcurrency || '?') +
-        ' · economia de dados: ' + (c.saveData ? 'sim' : 'não') +
-        '\nPlaca de vídeo: ' + perf.gpu +
-        '\nAmostras de quadros: ' + (perf.amostras.length ? perf.amostras.join(' | ') : 'role a página para medir') +
-        '\nLeve liga se: mediana > 25 ms, p90 > 40 ms ou 3+ quadros > 100 ms';
-    }
-    document.body.appendChild(box);
-    show(); setInterval(show, 1000);
-  })();
 
   /* ---------- Scroll suave: Lenis + GSAP ScrollTrigger ----------
      Lenis move o scroll nativo da janela com inércia; o ticker do GSAP

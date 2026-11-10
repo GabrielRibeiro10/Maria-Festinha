@@ -29,6 +29,8 @@
        em vez de esperar o CSS chegar. Mesma regra do .hero-sticky no css/style.css -->
   <link rel="preload" as="image" href="public/frames/frame-0001.webp" media="(min-width: 641px)" fetchpriority="high">
   <link rel="preload" as="image" href="public/hero-m-poster.webp" media="(max-width: 640px)" fetchpriority="high">
+  <!-- modo leve: detecta aparelho fraco antes da 1ª pintura (modelo da skill auditoria-site) -->
+  <script src="js/modo-leve.js?v=__V__"></script>
   <link rel="stylesheet" href="css/style.css?v=__V__">
   <!-- Ficha da empresa para o Google (dados estruturados; não aparece na página).
        Mantenha igual ao que o site mostra: endereço, telefone e Instagram. -->
@@ -80,15 +82,6 @@
   // F5 abre no topo desde já (sem o navegador restaurar a posição e o js/main.js puxar de
   // volta); e quem começa a rolar antes do js/main.js carregar não é jogado para o topo
   if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
-  // modo leve antes do 1º desenho: aparelho já detectado como fraco nos últimos 30 dias (o js/main.js
-  // guarda), ou forçado por ?leve=1 (?leve=0 força o normal e esquece o que estava guardado)
-  try {
-    var leveQ = /[?&]leve=([01])/.exec(location.search), leveG = null;
-    if (leveQ && leveQ[1] === '0') { localStorage.removeItem('mf-leve'); document.documentElement.setAttribute('data-leve-forca', '0'); }
-    else if (leveQ) leveG = { m: 'forcado', t: Date.now() };
-    else { leveG = JSON.parse(localStorage.getItem('mf-leve') || 'null'); if (leveG && Date.now() - leveG.t > 2592e6) leveG = null; }
-    if (leveG) { document.documentElement.classList.add('leve'); document.documentElement.setAttribute('data-leve', leveQ ? 'forcado' : 'lembrado:' + leveG.m); }
-  } catch (e) {}
   ['wheel', 'touchmove', 'keydown'].forEach(function (t) {
     addEventListener(t, function () { window.__rolou = 1; }, { once: true, passive: true });
   });
