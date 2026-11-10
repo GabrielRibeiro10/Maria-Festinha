@@ -20,6 +20,8 @@ Achar a causa: `causas.js --secao=#id --aparelho=celular-fraco` e confirmar desl
 | funciona no teste e quebra no ar (efeito some, fonte não carrega, script não roda) | a CSP do `vercel.json` bloqueia: `<script>` colado na página sem hash, `<style>` na página, arquivo de outro endereço | mover para arquivo `.js`/`.css` do site, ou liberar o hash/endereço; conferir com `producao.js` |
 | link quebrado mostra página sem estilo | 404.html com caminho relativo (`css/...`): dentro de pasta ele procura `/pasta/css/...` | caminhos absolutos (`/css/...`, `/img/...`) na 404 |
 | alvo de toque < 24 px | link de texto pequeno | área invisível com `::after { content:""; position:absolute; inset:-3px -4px }` (o elemento precisa ter `position`; não invada o alvo vizinho; não sobrescreva `position: absolute` existente) |
+| `Layerize` alto e um `span` de letra no topo de "Elementos mudados" (milhares de mudanças) | texto quebrado em letras animadas (cada letra vira camada) | modo leve: texto inteiro de uma vez (ficha `texto-letra-a-letra`) |
+| downloads/peso altos no modo leve sem rolar a página | pré-carregamento com tempo (`setTimeout` depois do `load`) que não olha o modo leve | checar o modo leve dentro da função que libera os downloads (ficha `sequencia-quadros`) |
 | aparelho fraco lento em quase todas as seções, e nenhum efeito desligado sozinho muda o resultado | o peso é o **conjunto** de efeitos (muitas animações presas à rolagem, sequência de quadros, etc.) | passo 3b: simplificar no modo leve, efeito por efeito, até bater a meta |
 
 ## Leitura de posição depois de escrita (layout forçado) — 2026-11-10
@@ -42,3 +44,19 @@ Achar a causa: `causas.js --secao=#id --aparelho=celular-fraco` e confirmar desl
   ~37 s; travadas somadas 10-11,8 s → 8,6 s (o resto era o conjunto de efeitos, 3b).
 - **Limitações:** `scrollTo` da rolagem suave (Lenis) também aparece caro, mas é o trabalho normal de mover a
   página; tirar o Lenis não melhorou (medido).
+
+## Aparelho fraco lento em tudo: como achar o que pesa — 2026-11-10
+- **Status:** confirmado (medido) — visto em: Maria Festinha
+- **Sintoma:** `META NÃO` no fraco, quase todas as seções acima de 35 ms, e desligar suspeitos óbvios (brilhos, neon,
+  canvas, Lenis) um a um não muda nada.
+- **Caminho que funcionou:**
+  1. medir o **teto**: desligar todas as animações presas à rolagem (`--js`) e todas as animações CSS
+     (`--css="*,*::before,*::after{animation:none!important;transition:none!important}"`). Se nem assim bate a meta,
+     o peso está em outro lugar;
+  2. `causas.js` na seção mais lenta: a lista "Elementos mudados" e o tempo por tipo (`Layerize`, `Commit`) apontam
+     efeitos que não são "animações de rolagem" (letras, camadas);
+  3. perfil de JS com chamadores (scripts de terceiros também aparecem: `map.js` do Google Maps);
+  4. contar requisições com a página parada (pré-carregamentos com tempo).
+- **Ordem do que mais rendeu (Maria Festinha):** texto letra a letra → sequência de quadros (incluindo o
+  pré-carregamento) → iframe do mapa. Juntos: computador fraco 12,7 → 0,7-0,9 s, tablet 6,9 → 0,2-0,35 s, celular
+  7,3 → 0,4-0,5 s. Animações presas à rolagem e Lenis renderam pouco ou pioraram.

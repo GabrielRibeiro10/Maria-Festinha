@@ -55,3 +55,16 @@ são do site; outras ele não consegue mostrar. Antes de corrigir ou descartar u
 - O `producao.js` quebrava quando uma página fechava com requisição pendente (sequência de quadros); corrigido com
   `try/catch` no `route`.
 - Servidores locais (`python3 -m http.server`) podem cair entre comandos longos: confira com `curl` antes de medir.
+- `PLAYWRIGHT_BROWSERS_PATH` (pasta do WebKit) **só** nos comandos do `iphone.js` e do `producao.js`. Exportado para
+  todos, os scripts que usam o Chrome não acham o navegador e quebram (`Executable doesn't exist`).
+
+## Ferramentas para medir efeito por efeito — 2026-11-10
+- **Status:** confirmado
+- `desempenho.js --js="..."` roda um trecho no navegador depois de carregar: desliga um efeito de JS sem mexer no
+  site (ex.: matar os ScrollTriggers, ver `efeitos.md`). `--css` continua para CSS. Esconder um canvas com `--css`
+  **não** para o JavaScript que desenha nele.
+- A API de camadas do Chrome (`LayerTree`) não responde no navegador sem tela do teste: para "camadas demais", use o
+  `Layerize`/`Commit` do `causas.js`.
+- Quadro médio entre 22 e ~26 ms **com zero travadas** em aparelho bom/médio: o navegador mede em quadros de 16,7 ou
+  33,3 ms, então alguns quadros de 33 ms puxam a média para cima sem a pessoa sentir. Anote no relatório, mas a
+  prioridade é o aparelho fraco e as travadas. — observação

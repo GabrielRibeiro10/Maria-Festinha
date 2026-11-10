@@ -133,9 +133,10 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
 
 .btn-outline {
   color: var(--lilac-700);
-  background: rgba(255, 255, 255, .55);
+  /* fundo um pouco mais opaco no lugar do vidro fosco (backdrop-filter): os botões ficam sobre a abertura animada
+     e o vidro era refeito a cada quadro, o que trava celular fraco; o visual fica praticamente igual */
+  background: rgba(255, 255, 255, .68);
   border-color: var(--lilac-400);
-  backdrop-filter: blur(4px);
 }
 .btn-outline:hover { background: #fff; border-color: var(--gold-400); }
 
@@ -266,7 +267,7 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
   animation: twinkle var(--d, 3s) ease-in-out var(--delay, 0s) infinite;
 }
 .sparkle-group.floaty { animation: twinkle var(--d, 3s) ease-in-out var(--delay, 0s) infinite, drift var(--fd, 14s) ease-in-out var(--delay, 0s) infinite alternate; }
-.sparkle-field.off .sparkle-group { animation: none !important; }   /* !important: o .lite .sparkle-group.floaty empatava e ganhava */
+.sparkle-field.off .sparkle-group { animation: none !important; }   /* !important: o .leve .sparkle-group.floaty empatava e ganhava */
 /* cada brilho é um dos fundos do grupo (posição e tamanho sorteados no js/main.js) */
 .sparkle-group { background-repeat: no-repeat; }
 
@@ -472,7 +473,8 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
   background:
     linear-gradient(180deg, rgba(255, 255, 255, .5) 0%, rgba(255, 255, 255, 0) 60%),
     linear-gradient(100deg, #efe6fd 0%, #e2d3f9 50%, #efe6fd 100%);
-  backdrop-filter: blur(8px);
+  /* sem backdrop-filter: o fundo é opaco, o desfoque por trás não aparecia, mas a placa de vídeo
+     refazia o cálculo a cada quadro (risco ALTO no celular fraco) */
   border: 1px solid var(--card-border);
   border-radius: 16px;
   box-shadow: var(--shadow-card), inset 0 1px 0 rgba(255, 255, 255, .8);
@@ -1470,8 +1472,8 @@ html:not(.js-fold) .photo-curtain { display: none; }
 /* Modo leve (celular fraco, sem placa de vídeo): a onda fica parada no lilás. Cor e brilho
    animando em cada letra repintam o título a cada quadro; no celular básico isso dobrava
    os quadros travados da rolagem (~10% para ~22%). Nos aparelhos bons a onda segue igual. */
-.lite .h1-lilac.wave .fold-char { animation: none !important; text-shadow: none !important; color: var(--lilac-600); }
-.lite .hero-title:not(.is-split) .h1-lilac.wave { animation: none; background: none; color: var(--lilac-600); -webkit-background-clip: border-box; background-clip: border-box; }
+.leve .h1-lilac.wave .fold-char { animation: none !important; text-shadow: none !important; color: var(--lilac-600); }
+.leve .hero-title:not(.is-split) .h1-lilac.wave { animation: none; background: none; color: var(--lilac-600); -webkit-background-clip: border-box; background-clip: border-box; }
 
 /* Celulares bem baixos (ex.: 320×568): com o mapa, o selo "Desde 2014" do painel final não cabe */
 @media (max-width: 640px) and (max-height: 600px) {
@@ -1550,16 +1552,16 @@ html:not(.js-fold) .photo-curtain { display: none; }
 .hero-sticky.is-away { content-visibility: hidden; }   /* longe da tela: não desenha (js/main.js) */
 html, body { overflow-x: clip; }
 
-/* Modo leve (js/main.js liga .lite: economia de energia, bateria baixa, FPS baixo).
+/* Modo leve (js/main.js liga .leve: economia de energia, bateria baixa, FPS baixo).
    Mesmo visual, menos trabalho contínuo para o celular/computador. */
 /* brilhos todos à mostra, mas parados (sem piscar nem flutuar): parados não custam nada
    por quadro; piscando, sem placa de vídeo, travavam a rolagem */
-.lite .sparkle-group { animation: none; opacity: .85; }
-.lite .btn-gold::after, .lite .map-chip em::after, .lite .wa-float::after { animation: none; opacity: 0; }   /* sem reflexo passando */
-.lite .neon-glow { display: none; }                               /* neon: linha + aura fixa */
-.lite .header-bar { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(250, 246, 255, .86); }
-.lite .map-chip { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(255, 255, 255, .92); }
-.lite .wa-float { animation: none; }
+.leve .sparkle-group { animation: none; opacity: .85; }
+.leve .btn-gold::after, .leve .map-chip em::after, .leve .wa-float::after { animation: none; opacity: 0; }   /* sem reflexo passando */
+.leve .neon-glow { display: none; }                               /* neon: linha + aura fixa */
+.leve .header-bar { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(250, 246, 255, .86); }
+.leve .map-chip { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(255, 255, 255, .92); }
+.leve .wa-float { animation: none; }
 /* aba em segundo plano: nada de animação CSS rodando */
 .is-hidden *, .is-hidden *::before, .is-hidden *::after { animation-play-state: paused !important; }
 

@@ -2,6 +2,8 @@
 // as travadas longas (>50 ms, as que a pessoa sente) e o quanto a página "pula" (CLS).
 // Uso: node desempenho.js [--pagina=index.html] [--aparelhos=celular-fraco,pc-fraco] [--modo=auto|normal|leve]
 //      [--css=".x{display:none}"]   (desliga algo para testar se é a causa)
+//      [--js="ScrollTrigger.getAll().forEach(t=>t.kill(true))"]   (roda no navegador depois de carregar: desliga um
+//      efeito de JS para medir quanto ele pesa, sem mexer no site; ver conhecimento/efeitos.md)
 // Referência: quadro médio até ~20 ms = liso; 20-35 ok; >35 a pessoa sente. Travada longa >100 ms = engasgo visível.
 const { chromium, args, lista, abrir, rolarTudo, modoAtual } = require('./comum');
 const init = () => {
@@ -18,6 +20,7 @@ const init = () => {
   for (const nome of aparelhos) {
     const { ctx, page, ap, erros } = await abrir(b, nome, a.base + '/' + (a.pagina || 'index.html'), { modo: a.modo || 'auto', espera: 3500, init });
     if (a.css) await page.addStyleTag({ content: a.css });
+    if (a.js) { try { await page.evaluate(a.js); } catch (e) { console.log('?? --js falhou: ' + e.message.split('\n')[0]); } await page.waitForTimeout(500); }
     // seções: as maiores partes da página com id, <section>, <header> ou <footer>; cada ponto fica com a mais funda
     const secoes = await page.evaluate(() => [...document.querySelectorAll('[id], section, header, footer, main')]
       .map((e) => { const r = e.getBoundingClientRect(); return { n: e.id ? '#' + e.id : e.tagName.toLowerCase() + (e.className && typeof e.className === 'string' ? '.' + e.className.split(' ')[0] : ''), t: r.top + scrollY, h: r.height }; })

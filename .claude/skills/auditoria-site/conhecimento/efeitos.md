@@ -28,7 +28,9 @@ leve** (versão parada mais próxima do visual) · **Cuidados** (defeitos conhec
 - **Custo:** processador, a cada quadro de rolagem, para cada gatilho ativo; escreve estilos e força recálculo se algo
   medir posição depois (ver `causas.md`, layout forçado). Muitas (10+) somadas pesam em aparelho fraco.
 - **Medir:** `descobrir.js` conta os gatilhos; perfil de JS mostra o tempo do GSAP (`render`, `_renderCSSTransforms`).
-  Para confirmar, desligue com uma flag no modo leve e meça de novo.
+  Para medir o teto: `desempenho.js --js="ScrollTrigger.getAll().forEach(t=>{t.animation&&t.animation.progress(1);t.kill()})"`.
+  No Maria Festinha (13 gatilhos), desligar todos rendeu pouco (12,7 → 11,4 s; depois das outras correções,
+  1,9 → 1,1 s): ataque primeiro letras, quadros e iframes.
 - **Modo leve:** estado final direto (sem `scrub`) ou entrada simples (`opacity`/`transform`) disparada uma vez.
 - **Visto em:** portfólio (8), Maria Festinha (13). — confirmado (medido)
 
@@ -42,9 +44,10 @@ leve** (versão parada mais próxima do visual) · **Cuidados** (defeitos conhec
 <!-- efeito: rolagem-suave -->
 ## Rolagem suave (Lenis, Locomotive)
 - **Custo:** processador; cada quadro chama `scrollTo` (que aparece caro no perfil, mas é o trabalho normal de mover).
-- **Medir:** bloquear o arquivo da biblioteca no teste (`page.route(...abort)`) e medir. No Maria Festinha tirar o
-  Lenis **não** melhorou (piorou): não é a primeira coisa a desligar.
-- **Modo leve:** rolagem nativa só se a medição mostrar ganho.
+- **Medir:** desligar no modo leve e medir. No Maria Festinha, duas vezes (antes e depois das outras correções),
+  tirar o Lenis diminuiu as travadas longas mas **subiu o quadro médio** (~30 → ~40 ms): a rolagem nativa em
+  saltos repinta mais por quadro. Não é a primeira coisa a desligar.
+- **Modo leve:** manter, salvo se a medição mostrar ganho nos dois números (travadas e quadro médio).
 - **Visto em:** portfólio, Maria Festinha. — confirmado (medido)
 
 <!-- efeito: webgl-3d -->
@@ -69,8 +72,14 @@ leve** (versão parada mais próxima do visual) · **Cuidados** (defeitos conhec
 - **Custo:** rede (megabytes: 477 quadros ≈ 11 MB no computador) e processador (baixar, decodificar, desenhar a cada
   quadro de rolagem).
 - **Medir:** `erros.js` mostra o peso por aparelho; perfil de JS mostra `fetch`/`blob`/`createImageBitmap`.
-- **Modo leve:** um quadro fixo (ou o vídeo/pôster que o site já usa no celular), sem baixar os outros quadros.
-- **Visto em:** Maria Festinha (só no computador; no celular o site usa um vídeo). — confirmado (peso medido)
+- **Modo leve:** um quadro fixo (ou o vídeo/pôster que o site já usa no celular), sem baixar os outros quadros. No
+  motor de quadros: parar de desenhar/decodificar depois do 1º quadro pintado, baixar só o 1º ao abrir, e bloquear o
+  "baixar todos" **dentro da função que libera os downloads** (não só em quem a chama).
+- **Cuidados:** procure **pré-carregamentos com tempo** ("quem fica X s no site já baixa tudo"): no Maria Festinha
+  um `setTimeout` de 4,5 s depois do `load` baixava os 477 quadros mesmo no modo leve. Confira contando as requisições
+  depois de ~6 s parado.
+- **Números (Maria Festinha, computador fraco):** travadas 6,0 s → 1,2 s; peso baixado ~11,6 MB → ~2,3 MB.
+- **Visto em:** Maria Festinha (só no computador; no celular o site usa um vídeo). — confirmado (medido)
 
 <!-- efeito: video-fundo -->
 ## Vídeo de fundo (autoplay, mudo, em loop)
@@ -82,8 +91,12 @@ leve** (versão parada mais próxima do visual) · **Cuidados** (defeitos conhec
 
 <!-- efeito: iframe-externo -->
 ## Iframe de outro site (mapa, vídeo, widget)
-- **Custo:** rede e processador do outro site; cookies de terceiros (LGPD, ver skill `juridico` A8).
-- **Modo leve:** carregar só ao clicar (imagem/botão no lugar), o que também resolve cookies antes do aceite.
+- **Custo:** rede e processador do outro site; o Google Maps roda o próprio JavaScript **o tempo todo** (aparece como
+  `map.js` no perfil de JS, medindo posições a cada quadro). Cookies de terceiros (LGPD, ver skill `juridico` A8).
+- **Modo leve:** imagem/mapa ilustrado no lugar do iframe (se o site já tem uma versão para o celular, use a mesma),
+  ou carregar só ao clicar, o que também resolve cookies antes do aceite.
+- **Números (Maria Festinha, modo leve):** junto com as outras correções, foi o passo que levou os três aparelhos
+  fracos à meta (computador fraco 1,3-1,9 s → 0,7-0,9 s).
 - **Cuidados:** liberar o endereço no `frame-src` da CSP.
 - **Visto em:** Maria Festinha (Google Maps no computador). — observação
 
@@ -94,7 +107,10 @@ leve** (versão parada mais próxima do visual) · **Cuidados** (defeitos conhec
 - **Modo leve:** fundo semitransparente (`rgba(...)`). Se o elemento rola com a página, troque **para todo mundo**: o
   visual fica quase igual.
 - **Cuidados:** leia a lista inteira do `pesados.js`: botões pequenos com vidro fosco aparecem no fim (visto: Maria
-  Festinha, `a.btn.btn-outline` continuava com vidro no modo leve).
+  Festinha, `a.btn.btn-outline` continuava com vidro no modo leve; trocado por fundo branco 68% para todo mundo).
+- **Vidro fosco atrás de fundo opaco** (cores sem transparência): o desfoque não aparece, mas a placa de vídeo calcula
+  mesmo assim. Tire para todo mundo, sem mudar nada na tela (visto: Maria Festinha, barra de diferenciais da abertura,
+  risco ALTO no computador). Antes de tirar, confira se todas as camadas do `background` são opacas.
 - **Visto em:** portfólio (13 etiquetas travavam celular fraco), Maria Festinha. — confirmado
 
 <!-- efeito: filter-blur -->
@@ -106,8 +122,12 @@ leve** (versão parada mais próxima do visual) · **Cuidados** (defeitos conhec
 <!-- efeito: mask -->
 ## Máscara (`mask-image`)
 - **Custo:** placa de vídeo; área grande animada é cara.
-- **Modo leve:** desligar a animação da máscara ou a máscara.
-- **Visto em:** portfólio, Maria Festinha (faixas de neon da abertura). — observação
+- **Modo leve:** desligar a animação da máscara ou a máscara. Animação feita por JS (variável CSS mudada a cada
+  passo): desenhar cada elemento uma vez quando aparece e não atualizar mais (visto: neon da abertura do Maria
+  Festinha).
+- **Cuidados:** o `pesados.js` continua listando a máscara depois de parada (ele não distingue parado de animado):
+  confira no código que ela não muda mais no modo leve.
+- **Visto em:** portfólio, Maria Festinha (faixas de neon da abertura). — confirmado (código)
 
 <!-- efeito: mix-blend -->
 ## Mistura de cores (`mix-blend-mode`)
@@ -124,10 +144,17 @@ leve** (versão parada mais próxima do visual) · **Cuidados** (defeitos conhec
 
 <!-- efeito: texto-letra-a-letra -->
 ## Texto quebrado em letras/palavras animadas
-- **Custo:** centenas de elementos mudando `style` a cada quadro (no Maria Festinha, 694 mudanças em ~35 quadros).
-- **Modo leve:** texto inteiro de uma vez (sem quebrar ou sem animar as letras). Leitores de tela: `aria-label` com o
-  texto inteiro.
-- **Visto em:** portfólio, Maria Festinha. — observação
+- **Custo:** centenas de elementos mudando `style` a cada quadro, cada letra animada vira uma camada (no rastro do
+  `causas.js`: `Layerize` alto e `span` de letra no topo da lista "Elementos mudados"). Com giro 3D e `filter` por
+  letra é pior. **Foi o maior peso do Maria Festinha**: um parágrafo inteiro letra a letra (~4.600 mudanças de estilo
+  em ~35 quadros) mais os títulos que "desdobram".
+- **Medir:** `causas.js --secao=#id` (procure `span.*-char` com milhares de mudanças).
+- **Modo leve:** texto inteiro de uma vez: não quebrar em letras se o modo leve já está ligado; se ligou depois de
+  quebrar, pôr todas as letras no estado final na hora de revelar. Animação de letras dentro de sequência presa à
+  rolagem: só opacidade (sem giro 3D nem `filter`). Leitores de tela: `aria-label`/`.sr-only` com o texto inteiro.
+- **Números (Maria Festinha, modo leve, travadas somadas):** celular fraco 7,3 s → 1,9 s; computador fraco
+  12,7 s → 6,0 s; tablet fraco 6,9 s → 2,8 s (só com esta mudança).
+- **Visto em:** portfólio, Maria Festinha. — confirmado (medido)
 
 <!-- efeito: css-3d -->
 ## 3D em CSS (`preserve-3d`, perspectiva)
