@@ -44,19 +44,28 @@ E, em todos: **nenhum efeito de placa de vídeo de risco ALTO ligado no modo lev
 termina cada aparelho com `META ok` ou `META NÃO`. **Aparelho fraco com `META NÃO` não é pendência para o dono
 decidir: é trabalho da auditoria (passos 3 e 3b).**
 
-## Modo leve (ler antes de mexer)
+## Modo leve (obrigatório em todo site — ler antes de mexer)
 
-- Sites com efeitos pesados devem ter um **modo leve**: uma classe no `<html>` ligada antes da primeira pintura quando
-  o aparelho é fraco (sem placa de vídeo, pouca memória/núcleos, economia de dados, bateria baixa) e, durante o uso,
-  quando a fluidez cai. No modo leve tudo que pesa desliga ou fica parado; o visual de quem tem aparelho bom não muda.
-- Cada site faz isso do seu jeito (nome da classe, pistas, se aceita `?leve=1`). O passo 0 descobre; os scripts forçam
-  o modo **fingindo o aparelho** (as mesmas pistas que os sites usam), então funcionam em qualquer site.
-- **Todo efeito** precisa: checar o modo leve ao começar, **parar se o modo leve ligar no meio do uso** (evento do site)
-  e respeitar `prefers-reduced-motion`.
-- **Confira a detecção, não só os efeitos:** o teste força o modo leve, então não prova que ele liga num celular de
-  verdade. Leia o código que liga a classe e compare com a ficha `modo-leve` de `conhecimento/efeitos.md` (pistas
-  que pegam celular atual, engasgos além da mediana, lembrar a decisão, `?leve=info` para o dono conferir no aparelho).
-  Entregue ao dono o link `?leve=info` para ele abrir no próprio celular.
+O site tem que perceber **sozinho** que o celular ou o PC é fraco e, nesse caso, entrar no **modo leve**: classe
+`leve` no `<html>`, ligada antes da primeira pintura, e tudo que pesa desliga ou fica parado. Quem tem aparelho bom
+vê o site igual. **A auditoria garante isso em todo site, sem perguntar.**
+
+- **Detecção = o modelo da skill**, `modelos/modo-leve.js` (a mesma detecção do portfólio): placa de vídeo fraca ou
+  sem aceleração (inclui lista de placas fracas de celular), teste de processador de ~12 ms, até 2 núcleos/2 GB,
+  economia de dados/2G, perfil guardado 30 dias e rede de segurança de fluidez (abaixo de ~25 fps por 4 s, liga no
+  meio do uso). Tem `?leve=1`, `?leve=0` e `?leve=info` (caixinha com o que foi detectado no aparelho).
+- **Passo 0b (obrigatório):** se o site não carrega `js/modo-leve.js` no `<head>` (o `descobrir.js` diz), **instale**:
+  copie `modelos/modo-leve.js` para `js/modo-leve.js`, ponha `<script src="/js/modo-leve.js"></script>` no `<head>` de
+  todas as páginas que têm efeitos, **sem `defer`/`async`** (de preferência antes do CSS), e ligue os efeitos a ele (abaixo). Se o site já tiver uma
+  detecção própria, **troque pelo modelo** (detecção própria mais fraca já deixou celular fraco sem modo leve) e faça
+  o código do site seguir a classe `leve` e o evento `leve:liga`. Se o site usava outro nome de classe, troque para
+  `leve` no CSS e no JS. Detecção nova melhor que o modelo: melhore o **modelo** (e o portfólio), não só o site.
+- **Todo efeito** precisa: checar `document.documentElement.classList.contains('leve')` ao começar, **parar quando o
+  modo ligar no meio do uso** (`document.addEventListener('leve:liga', ...)`) e respeitar `prefers-reduced-motion`.
+  CSS: regras `.leve ...`. O passo 3b decide o que fica parado.
+- **Confira a detecção, não só os efeitos:** os testes forçam o modo leve, então não provam que ele liga num aparelho
+  de verdade. Rode o teste de detecção (ficha `modo-leve` em `conhecimento/efeitos.md`) e **entregue ao dono o link
+  `?leve=info`** para ele abrir no próprio celular.
 - **Limite do teste:** o navegador de teste não tem placa de vídeo. Os tempos refletem o processador, mas não o custo
   de vidro fosco, desfoque, máscara e mistura de cores, que são os que travam um celular fraco de verdade. Por isso o
   `pesados.js` é obrigatório. E WebGL/3D sai exagerado aqui (ver `conhecimento/ambiente-de-teste.md`).
@@ -66,8 +75,10 @@ decidir: é trabalho da auditoria (passos 3 e 3b).**
 0. **Descobrir o site:** `node .claude/skills/auditoria-site/scripts/descobrir.js`
    Mostra páginas, hospedagem, 404, **classe do modo leve** (ou que não existe), se `?leve=1` funciona e a lista de
    **efeitos** que o site usa. Efeito marcado **NOVO** não tem ficha na base: meça-o nos passos 2/2b, decida como ele
-   fica no modo leve (passo 3b) e **grave a ficha** em `conhecimento/efeitos.md`. Site **sem modo leve** e com efeitos
-   pesados: proponha ao dono criar um (3b.5).
+   fica no modo leve (passo 3b) e **grave a ficha** em `conhecimento/efeitos.md`.
+
+0b. **Modo leve automático (obrigatório):** se o `descobrir.js` disser que o site não usa o modelo `js/modo-leve.js`,
+   instale agora (seção "Modo leve" acima) e só depois siga para as medições.
 
 1. **Erros e rede** (todas as páginas `*.html`): `node .claude/skills/auditoria-site/scripts/erros.js`
    Tem que sair "sem erros, falhas ou rolagem lateral". Vídeo em `ERR_ABORTED` é download em pedaços (já ignorado).
@@ -114,9 +125,7 @@ decidir: é trabalho da auditoria (passos 3 e 3b).**
    4. Cada efeito simplificado: checa o modo leve ao começar **e** para se ele ligar no meio do uso; respeita
       `prefers-reduced-motion`.
    5. **Pergunte antes** só se: a única saída for mudar o visual também para aparelhos bons; for remover conteúdo (texto,
-      foto, seção, botão) e não só movimento; ou o site **não tiver modo leve** (proponha criar um: classe no `<html>`
-      ligada no `<head>` antes da primeira pintura, pistas de aparelho fraco, queda de fluidez durante o uso, evento
-      para os efeitos pararem; o modelo está em `conhecimento/efeitos.md`, ficha "modo-leve").
+      foto, seção, botão) e não só movimento. (Site sem modo leve não é pergunta: instale o modelo, passo 0b.)
    6. Mostre no relatório, por aparelho fraco, números antes/depois e o que ficou parado no modo leve, em linguagem
       simples ("no celular fraco, as letras do título aparecem inteiras em vez de uma a uma").
 

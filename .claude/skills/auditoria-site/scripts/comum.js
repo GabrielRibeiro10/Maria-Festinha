@@ -54,6 +54,9 @@ function fingirAparelho(modo) {
         if (!C) continue; const g = C.prototype.getParameter;
         C.prototype.getParameter = function (k) { return (k === 0x9246 || k === 0x1F01) ? 'ANGLE (NVIDIA, NVIDIA GeForce RTX 3060 Direct3D11)' : (k === 0x9245 || k === 0x1F00) ? 'Google Inc. (NVIDIA)' : g.call(this, k); };
       }
+      // "placa de vídeo de verdade?" (failIfMajorPerformanceCaveat): sem placa, o navegador de teste diria que não
+      const gc = HTMLCanvasElement.prototype.getContext;
+      HTMLCanvasElement.prototype.getContext = function (t, o) { if (o && o.failIfMajorPerformanceCaveat) o = Object.assign({}, o, { failIfMajorPerformanceCaveat: false }); return gc.call(this, t, o); };
       def(Navigator.prototype, 'deviceMemory', 8); def(Navigator.prototype, 'hardwareConcurrency', 8);
       def(Navigator.prototype, 'getBattery', undefined);
       if (navigator.connection) { def(navigator.connection, 'saveData', false); def(navigator.connection, 'effectiveType', '4g'); }

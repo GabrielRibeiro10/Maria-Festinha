@@ -11,30 +11,27 @@ leve** (versão parada mais próxima do visual) · **Cuidados** (defeitos conhec
 
 <!-- efeito: modo-leve -->
 ## Modo leve (o sistema, não um efeito)
-- **O que é:** classe no `<html>` que desliga/para o que pesa em aparelho fraco. Sem ele, o aparelho fraco roda tudo.
-- **Como criar (modelo):** script pequeno no `<head>`, antes do CSS, que liga a classe antes da primeira pintura com
-  estas pistas: sem placa de vídeo (WebGL ausente ou renderizador `swiftshader|llvmpipe|software|basic render`),
-  `navigator.deviceMemory <= 2`, `hardwareConcurrency <= 2`, `connection.saveData`; e um medidor de fluidez durante o
-  uso (mediana de quadros > 25 ms por alguns segundos, rolando) que liga a classe depois e dispara um evento para os
-  efeitos pararem. Registre o motivo (`data-...`) e aceite `?leve=1`/`?leve=0` para teste. Modelos prontos: portfólio
-  (`js/desempenho.js`, classe `leve`, evento `gr:leve`) e Maria Festinha (início do `js/main.js`, classe `lite`,
-  evento `litechange`).
-- **Cuidados:** a classe tem que existir antes da primeira pintura (senão a página pula); todo efeito confere a classe
-  ao começar e escuta o evento.
-- **Detecção que falha em celular de verdade (visto: Maria Festinha, o dono reclamou que o leve não ligava):**
-  - memória ≤ 2 GB / núcleos ≤ 2 quase nunca pega celular atual (os fracos têm 3-4 GB e 8 núcleos; o iPhone nem
-    informa a memória); "sem placa de vídeo" nunca pega celular; bateria só existe no Android;
-  - medir fluidez só pela **mediana** deixa passar o aparelho que roda liso quase sempre e **engasga de vez em
-    quando** (o que a pessoa sente). Use também os engasgos: 10% ou mais dos quadros acima de 40 ms (p90), ou 3+
-    quadros acima de 100 ms numa amostra;
-  - **lembrar a decisão** (`localStorage`, 30 dias) e ligar a classe no `<head>` na próxima visita; sem isso o
-    aparelho precisa travar de novo a cada visita para ser detectado;
-  - ter `?leve=1` / `?leve=0` e uma caixinha de diagnóstico (`?leve=info`: modo, motivo, memória, núcleos, placa de
-    vídeo e as amostras de quadros) para o dono conferir no próprio celular: o teste não tem celular de verdade.
-  - Mudou o script do `<head>`: recalcule o hash na CSP (`producao.js` acusa).
-  - Teste (simulado): celular bom continua normal, celular fraco liga e a próxima visita já abre leve; celular
-    médio a ~60 FPS continua normal (correto: ele dá conta).
-- **Visto em:** portfólio, Maria Festinha. — confirmado
+- **O que é:** classe `leve` no `<html>` que desliga/para o que pesa em aparelho fraco. Sem ele, o aparelho fraco roda
+  tudo. **Obrigatório em todo site** (SKILL.md, passo 0b).
+- **Detecção oficial:** `modelos/modo-leve.js` (cópia universal do `js/desempenho.js` do portfólio). No `<head>`, antes
+  do CSS, sem `defer`. Pistas: placa de vídeo sem aceleração ou da lista de placas fracas, teste de processador
+  (< 350 = fraco), até 2 núcleos/2 GB (fora do Safari), economia de dados/2G; perfil guardado 30 dias; rede de
+  segurança: duas janelas seguidas de 2 s com mediana acima de 40 ms (< 25 fps) liga no meio do uso. Evento
+  `leve:liga`; `?leve=1`, `?leve=0`, `?leve=info`.
+- **Por que um modelo único (visto: Maria Festinha, o dono reclamou que o leve não ligava no celular):** o site tinha
+  detecção própria, no `main.js` (com `defer`, depois da 1ª pintura), só com memória ≤ 2 GB / núcleos ≤ 2 (quase
+  nenhum celular atual), "sem placa de vídeo" (todo celular tem), bateria baixa (só Android) e fluidez pela mediana;
+  sem teste de processador, sem lista de placas fracas, sem lembrar a decisão. Trocado pelo modelo: o site passou a
+  ligar o modo leve antes de desenhar, e os aparelhos fracos simulados ficaram mais leves ainda
+  (travadas 0,17-0,22 s, antes 0,3-0,9 s).
+- **Testar a detecção:** abrir com `prepararModo(p, 'normal')` (finge placa de vídeo, inclusive
+  `failIfMajorPerformanceCaveat`) em celular/PC bom → tem que ficar normal; sem fingir → liga com motivo `gpu`.
+  O teste de processador com a lentidão simulada do Chrome dá ~360-380 no "fraco" (perto do limite de 350): o teste
+  não reproduz bem um celular fraco real; no aparelho, confira com `?leve=info`. Num PC sem placa de vídeo, a rede de
+  segurança liga sozinha ("fps") porque a tela grande é desenhada no processador.
+- **Cuidados:** todo efeito confere a classe ao começar e escuta `leve:liga`; mudou um script colado no `<head>`,
+  recalcule o hash da CSP.
+- **Visto em:** portfólio (original), Maria Festinha (instalado). — confirmado
 
 <!-- efeito: scroll-scrub -->
 ## Animações presas à rolagem (GSAP ScrollTrigger com `scrub`/`onUpdate`)

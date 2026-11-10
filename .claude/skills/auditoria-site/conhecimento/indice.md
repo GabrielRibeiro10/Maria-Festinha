@@ -3,7 +3,7 @@
 Atualize a cada entrada nova (arquivo · título · data · status).
 
 ## Efeitos (`efeitos.md`)
-- modo-leve · como criar um modo leve (modelo) + detecção que falha em celular de verdade · 2026-11-10 · confirmado
+- modo-leve · detecção oficial = modelos/modo-leve.js (obrigatório em todo site) · 2026-11-10 · confirmado
 - scroll-scrub · animações presas à rolagem · 2026-11-10 · confirmado
 - scroll-pin · seção presa enquanto rola · 2026-11-10 · observação
 - rolagem-suave · Lenis/Locomotive (tirar não melhorou) · 2026-11-10 · confirmado
