@@ -1101,11 +1101,16 @@
       return false;
     });
   }
+  // Com o Lenis, a leitura roda no começo do quadro do GSAP (prioritária), antes de o
+  // ScrollTrigger e as outras animações escreverem estilos: a página ainda está calculada e
+  // o getBoundingClientRect sai quase de graça. Num requestAnimationFrame comum ela rodava
+  // depois dessas escritas e forçava o navegador a recalcular a página inteira a cada quadro.
   var sweepQueued = false;
+  if (lenis) gsap.ticker.add(function () { if (sweepQueued) { sweepQueued = false; sweep(); } }, false, true);
   function queueSweep() {
     if (sweepQueued) return;
     sweepQueued = true;
-    requestAnimationFrame(function () { sweepQueued = false; sweep(); });
+    if (!lenis) requestAnimationFrame(function () { sweepQueued = false; sweep(); });
   }
   // at: fração da altura da tela que o topo do elemento precisa passar (padrão 98%)
   function whenSeen(el, fn, at) { seen.push({ el: el, fn: fn, at: at || 0.98 }); seenDirty = true; queueSweep(); }
@@ -1914,6 +1919,18 @@
   document.querySelectorAll('[data-ac-carousel]').forEach(function (grid) {
     var slots = Array.prototype.slice.call(grid.children);
     if (slots.length < 2) return;
+    // carrossel sem link/botão dentro (ex.: Celebrações): enquanto ele rola para o lado, vira
+    // uma parada do Tab com nome, para quem usa teclado conseguir rolar com as setas
+    if (!grid.querySelector('a, button, input, [tabindex]')) {
+      var sec = grid.closest('section'), h = sec && sec.querySelector('h2');
+      grid.setAttribute('aria-label', (h ? h.textContent.trim() : 'Carrossel') + ' (role para o lado)');
+      var focusable = function () {
+        if (grid.scrollWidth > grid.clientWidth + 1) { grid.tabIndex = 0; grid.setAttribute('role', 'region'); }
+        else { grid.removeAttribute('tabindex'); grid.removeAttribute('role'); }
+      };
+      focusable();
+      window.addEventListener('resize', focusable);
+    }
     var nav = document.createElement('div');
     nav.className = 'carousel-nav';
     nav.innerHTML =
@@ -1990,7 +2007,9 @@
       queued = false;
       header.classList.toggle('is-solid', rest.getBoundingClientRect().top < header.offsetHeight);
     }
-    function queue() { if (!queued) { queued = true; requestAnimationFrame(check); } }
+    // com o Lenis, lê no começo do quadro do GSAP (antes das escritas), como as entradas acima
+    if (lenis) gsap.ticker.add(function () { if (queued) check(); }, false, true);
+    function queue() { if (!queued) { queued = true; if (!lenis) requestAnimationFrame(check); } }
     window.addEventListener('scroll', queue, { passive: true });
     window.addEventListener('resize', queue);
     check();

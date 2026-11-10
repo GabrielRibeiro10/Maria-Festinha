@@ -1123,7 +1123,9 @@ html:not(.js-fold) .photo-curtain { display: none; }
   font-family: var(--serif); font-size: 15px; letter-spacing: .16em; text-transform: uppercase; color: var(--plum); font-weight: 600; margin-bottom: 14px;
 }
 .site-footer ul li { margin-bottom: 7px; }
-.site-footer ul a { color: var(--text); transition: color .2s; }
+.site-footer ul a { position: relative; color: var(--text); transition: color .2s; }
+/* área de toque de 25 px (o texto tem 19): invisível, sem invadir o link vizinho (7 px abaixo) */
+.site-footer ul a::after { content: ""; position: absolute; inset: -3px -4px; }
 .site-footer ul a:hover { color: var(--gold-700); }
 .contact-list li { display: flex; align-items: center; gap: 8px; }
 .contact-list svg { width: 18px; height: 18px; color: var(--gold-600); flex-shrink: 0; }
