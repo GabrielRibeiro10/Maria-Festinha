@@ -14,7 +14,8 @@
   <style>
     .doc { max-width: 760px; margin: 0 auto; padding: 56px 22px 80px; color: var(--text); line-height: 1.7; font-size: 16px; }
     .doc a { color: var(--plum); text-decoration: underline; text-underline-offset: 3px; }
-    .doc-back { display: inline-block; margin-bottom: 28px; font-size: 14px; }
+    .doc-back { position: relative; display: inline-block; margin-bottom: 28px; font-size: 14px; }
+    .doc-back::after { content: ""; position: absolute; inset: -6px -4px; }   /* área de toque maior, invisível */
     .doc h1 { font-family: var(--serif); color: var(--plum); font-size: clamp(30px, 5vw, 42px); font-weight: 500; line-height: 1.15; margin: 0 0 8px; }
     .doc .doc-date { color: var(--muted); font-size: 14px; margin: 0 0 32px; }
     .doc h2 { font-family: var(--serif); color: var(--plum); font-size: 21px; font-weight: 600; margin: 36px 0 10px; }

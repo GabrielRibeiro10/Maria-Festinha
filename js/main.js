@@ -26,13 +26,13 @@
      está rodando abaixo de ~40 FPS (economia de energia do iPhone/Android e
      notebooks na bateria limitam a 30 FPS). O design não muda: só os efeitos
      contínuos ficam mais baratos (brilhos, neon, mistura de frames, desfoques). */
-  var perf = { lite: false };
+  var perf = { leve: false };
   function goLite(reason) {
-    if (perf.lite) return;
-    perf.lite = true;
-    document.documentElement.classList.add('lite');
-    document.documentElement.setAttribute('data-lite', reason);
-    window.dispatchEvent(new Event('litechange'));
+    if (perf.leve) return;
+    perf.leve = true;
+    document.documentElement.classList.add('leve');
+    document.documentElement.setAttribute('data-leve', reason);
+    window.dispatchEvent(new Event('levechange'));
   }
   (function () {
     var nav = navigator;
@@ -60,7 +60,7 @@
     }).catch(function () {});
     // mede a taxa de quadros com a página parada (mediana de 60 quadros)
     function sampleFps() {
-      if (perf.lite || document.hidden) return;
+      if (perf.leve || document.hidden) return;
       var d = [], prev = 0;
       requestAnimationFrame(function f(t) {
         if (prev) d.push(t - prev);
@@ -77,7 +77,7 @@
     (function () {
       var d = [], prev = 0, lastMove = 0, lastY = window.scrollY, samples = 0, running = false;
       function frame(t) {
-        if (perf.lite || document.hidden) { running = false; prev = 0; return; }
+        if (perf.leve || document.hidden) { running = false; prev = 0; return; }
         var y = window.scrollY;
         if (y !== lastY) { lastY = y; lastMove = t; }
         if (prev && t - lastMove < 120) d.push(t - prev);   // só quadros com a página andando
@@ -91,7 +91,7 @@
         requestAnimationFrame(frame);
       }
       function onScroll() {
-        if (running || perf.lite || samples >= 3) return;
+        if (running || perf.leve || samples >= 3) return;
         running = true; lastMove = performance.now();
         requestAnimationFrame(frame);
       }
@@ -190,6 +190,10 @@
   function foldTo(extra) {
     return Object.assign({ rotationX: 0, autoAlpha: 1, filter: 'brightness(1)', duration: FOLD.duration, stagger: FOLD.stagger, ease: FOLD.ease }, extra);
   }
+  // modo leve: as letras só aparecem (opacidade), sem o giro 3D e o filtro de brilho em cada letra
+  var foldFromLeve = { autoAlpha: 0 };
+  function foldFromNow() { return perf.leve ? foldFromLeve : foldFrom; }
+  function foldToNow(extra) { var t = foldTo(extra); if (perf.leve) { delete t.rotationX; delete t.filter; } return t; }
 
 
   /* ---------- Brilhos dourados (confete, corações e bokeh) ----------
@@ -393,8 +397,8 @@
     }
     function paint(now) {
       requestAnimationFrame(paint);
-      if (now - last < (perf.lite ? 66 : neonStep)) return;   // modo leve: ~15 quadros por segundo; celular: ~30
-      var dt = Math.min(perf.lite ? 0.1 : 0.05, Math.max(0, (now - last) / 1000));
+      if (now - last < (perf.leve ? 66 : neonStep)) return;   // modo leve: ~15 quadros por segundo; celular: ~30
+      var dt = Math.min(perf.leve ? 0.1 : 0.05, Math.max(0, (now - last) / 1000));
       last = now;
       stepT += dt / beat;
       while (stepT >= 1) { stepT -= 1; corner += 1; }
@@ -403,6 +407,10 @@
         // lê só o estilo inline que o GSAP escreve (sem forçar recálculo de layout)
         var op = n.el.style.opacity;
         if (!n.w || n.photo._neonOn === false || (op !== '' && +op < 0.01)) return;
+        // modo leve: cada neon é desenhado uma vez (quando aparece) e fica parado: a máscara
+        // animada era refeita pela placa de vídeo a cada passo
+        if (perf.leve && n.parado) return;
+        if (perf.leve) n.parado = true;
         var w = n.w, h = n.h;
         var from = cornerLap(corner, w, h), to = cornerLap(corner + 1, w, h);
         var lap = from + (to - from) * glide(stepT);
@@ -521,9 +529,11 @@
     enqueue(total - 1);
     for (var j0 = 0; j0 < total; j0 += 16) enqueue(j0);
     var limit = order.length;
+    if (perf.leve) limit = 2;   // modo leve desde o início: o fundo fica parado no 1º quadro (ver tick)
     [8, 4, 2, 1].forEach(function (s) { for (var j = 0; j < total; j += s) enqueue(j); });
     function fillAll() {
       if (mobile || limit === order.length) return;   // celular: o fundo é o vídeo, nada de frames
+      if (perf.leve) return;   // modo leve: o fundo fica parado (ver tick), não baixa os ~21 MB
       limit = order.length;
       pump();
     }
@@ -665,6 +675,10 @@
       var dt = Math.min(0.1, Math.max(0.001, (now - last) / 1000));
       last = now;
       if (!cw) return;
+      // modo leve: o fundo fica parado no quadro que já está na tela (o 1º, ou onde estava se
+      // o modo ligou no meio). Os painéis de texto continuam trocando com a rolagem; só param
+      // os downloads, a decodificação e o desenho de quadros, que travavam o aparelho fraco
+      if (perf.leve && painted) return;
       var goal = target * (total - 1);
       // velocidade do scroll em frames/s (suavizada): projeta o caminho à frente
       vel += ((goal - lastGoal) / dt - vel) * Math.min(1, dt * 10);
@@ -679,7 +693,7 @@
       target = p;
       // rolando dentro da Hero: agora vale baixar o resto dos frames. Quem pula direto
       // para depois dela (link do menu) não dispara; se voltar, o plano pede o que precisar
-      if (p > 0 && p < 1) fillAll();
+      if (p > 0 && p < 1 && !perf.leve) fillAll();
     }
 
     function resize() {
@@ -688,7 +702,7 @@
       // resolução do canvas: a da tela, mas nunca com mais pixels que os frames têm
       // (acima disso só gasta memória e decodificação, sem ganhar nitidez)
       var dpr = Math.min(window.devicePixelRatio || 1, 1 / Math.max(w0 / NW, h0 / NH));
-      if (perf.lite) dpr = Math.min(dpr, 1);
+      if (perf.leve) dpr = Math.min(dpr, 1);
       var w = Math.round(w0 * dpr), h = Math.round(h0 * dpr);
       if (w === cw && h === ch) return;
       // mudar o tamanho apaga o canvas: guarda a imagem da tela para redesenhá-la no
@@ -742,11 +756,13 @@
     var mapFrame = hero.querySelector('.hero-map iframe');
     var handheld = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) ||
       (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);   // iPad se identifica como Mac
-    if (mapFrame && handheld) {
+    // modo leve: também o mapa ilustrado (o Google Maps roda o próprio código o tempo todo)
+    if (mapFrame && (handheld || perf.leve)) {
       mapFrame.remove(); mapFrame = null;
     }
     function loadMap() {
       if (!mapFrame || mapFrame.src) return;
+      if (perf.leve) { mapFrame.remove(); mapFrame = null; return; }   // o modo leve ligou depois
       mapFrame.src = mapFrame.getAttribute('data-src');
     }
     var fab = document.querySelector('.wa-float');
@@ -950,7 +966,7 @@
       var neon3 = buildNeon(hero.querySelector('.hero-map'));
       runNeons([neon1, neon2, neon3]);
       // (títulos da Hero continuam separados: a sequência de rolagem anima as linhas deles)
-      gsap.fromTo(splitChars(hero.querySelector('[data-panel="1"] .hero-title')), foldFrom, foldTo({ delay: 0.3, clearProps: 'transform,filter' }));
+      gsap.fromTo(splitChars(hero.querySelector('[data-panel="1"] .hero-title')), foldFromNow(), foldToNow({ delay: 0.3, clearProps: 'transform,filter' }));
       var parts = function (n) {
         var p = '[data-panel="' + n + '"] ';
         return hero.querySelectorAll(p + '.hero-title > span, ' + p + '.hero-title ~ *');
@@ -971,7 +987,7 @@
       })
         .to(parts(1), out, 1.4)
         .fromTo(parts(2), from, into, 2.7)
-        .fromTo(splitChars(hero.querySelector('[data-panel="2"] .hero-title')), foldFrom, foldTo({ duration: 0.6, stagger: 0.03 }), 2.75)
+        .fromTo(splitChars(hero.querySelector('[data-panel="2"] .hero-title')), foldFromNow(), foldToNow({ duration: 0.6, stagger: 0.03 }), 2.75)
         .to(parts(2), out, 5.2)
         // fotos do celular: leve zoom que assenta ao entrar e cresce ao sair
         .to('[data-panel="1"] .hero-photo img', { scale: 1.1, duration: 1.2, ease: 'power1.in' }, 1.4)
@@ -985,7 +1001,7 @@
         // mapa do painel final: mesmo zoom de entrada e neon das fotos
         .fromTo('.hero-map .map-art', { scale: 1.18 }, { scale: 1, duration: 1.5, ease: 'power2.out' }, 6.5)
         .fromTo(neon3.el, { opacity: 0 }, { opacity: 1, duration: 1.3, ease: 'power2.in' }, 6.8)
-        .fromTo(splitChars(hero.querySelector('[data-panel="3"] .hero-title')), foldFrom, foldTo({ duration: 0.6, stagger: 0.03 }), 6.55)
+        .fromTo(splitChars(hero.querySelector('[data-panel="3"] .hero-title')), foldFromNow(), foldToNow({ duration: 0.6, stagger: 0.03 }), 6.55)
         .to({}, { duration: 1.6 });   // orçamento todo visível antes de soltar a página
       // aplica já o estado inicial (painéis 2 e 3 escondidos) antes da 1ª rolagem;
       // com scrub suavizado o GSAP só renderizava depois de rolar
@@ -1009,7 +1025,7 @@
       onScroll();
     }
     window.addEventListener('resize', resize);
-    window.addEventListener('litechange', resize);
+    window.addEventListener('levechange', resize);
     window.addEventListener('load', function () {
       // mapa real do computador: carrega logo depois da página, sem esperar o scroll.
       // (loading="lazy" saiu: o Chrome adiava o mapa escondido dentro da Hero presa)
@@ -1101,11 +1117,16 @@
       return false;
     });
   }
+  // Com o Lenis, a leitura roda no começo do quadro do GSAP (prioritária), antes de o
+  // ScrollTrigger e as outras animações escreverem estilos: a página ainda está calculada e
+  // o getBoundingClientRect sai quase de graça. Num requestAnimationFrame comum ela rodava
+  // depois dessas escritas e forçava o navegador a recalcular a página inteira a cada quadro.
   var sweepQueued = false;
+  if (lenis) gsap.ticker.add(function () { if (sweepQueued) { sweepQueued = false; sweep(); } }, false, true);
   function queueSweep() {
     if (sweepQueued) return;
     sweepQueued = true;
-    requestAnimationFrame(function () { sweepQueued = false; sweep(); });
+    if (!lenis) requestAnimationFrame(function () { sweepQueued = false; sweep(); });
   }
   // at: fração da altura da tela que o topo do elemento precisa passar (padrão 98%)
   function whenSeen(el, fn, at) { seen.push({ el: el, fn: fn, at: at || 0.98 }); seenDirty = true; queueSweep(); }
@@ -1327,9 +1348,9 @@
         rotation: (dx !== 0 ? dx : (dy < 0 ? -1 : 1)) * (dy < 0 ? -1 : 1) * (7 + (i % 3) * 2.5),
         scale: 0.84,
         autoAlpha: 0,
-        filter: perf.lite ? 'none' : 'blur(10px)'
+        filter: perf.leve ? 'none' : 'blur(10px)'
       };
-      var to = { xPercent: 0, yPercent: 0, rotation: 0, scale: 1, autoAlpha: 1, filter: perf.lite ? 'none' : 'blur(0px)',
+      var to = { xPercent: 0, yPercent: 0, rotation: 0, scale: 1, autoAlpha: 1, filter: perf.leve ? 'none' : 'blur(0px)',
         duration: 1, ease: 'power2.inOut' };
       tl.fromTo(p, from, to, lag[i % lag.length]);
     });
@@ -1762,6 +1783,9 @@
       el.style.visibility = 'hidden';
       whenSeen(el, function (e, delay) {
         el.style.visibility = '';
+        // modo leve: o título aparece inteiro, sem virar letras (centenas de letras em 3D
+        // com filtro travavam a rolagem do aparelho fraco)
+        if (perf.leve) return;
         // card do carrossel do celular ainda fora da tela (para o lado): aparece pronto,
         // sem animar letra por letra onde ninguém vê
         var r = el.getBoundingClientRect();
@@ -1769,7 +1793,7 @@
         var chars = splitChars(el);
         gsap.set(chars, foldFrom);
         var to = foldTo({ delay: delay, clearProps: 'transform,filter', onComplete: function () { unsplit(el); } });
-        if (perf.lite) { delete to.filter; gsap.set(chars, { filter: 'none' }); }
+        if (perf.leve) { delete to.filter; gsap.set(chars, { filter: 'none' }); }
         gsap.to(chars, to);
       });
     });
@@ -1832,8 +1856,13 @@
 
     var title = document.querySelector('#quem-somos .about-title');
     if (!title) return;
+    // modo leve: o texto fica pronto, sem quebrar em centenas de letras (era o que mais pesava
+    // a rolagem do aparelho fraco: ~4.600 mudanças de estilo em ~35 quadros)
+    if (perf.leve) return;
     document.querySelectorAll('#quem-somos .about-title, #quem-somos .about-copy > p').forEach(floatText);
     whenSeen(title, function () {
+      // o modo leve ligou depois de quebrar (queda de fluidez): mostra tudo de uma vez
+      if (perf.leve) { gsap.set(all, { opacity: 1, yPercent: 0, scaleY: 1, scaleX: 1, clearProps: 'transform' }); return; }
       gsap.to(all, { duration: SF.duration, stagger: (SF.total - SF.duration) / Math.max(all.length - 1, 1), ease: SF.ease, opacity: 1, yPercent: 0, scaleY: 1, scaleX: 1 });
     }, 0.85);
   });
@@ -1914,6 +1943,18 @@
   document.querySelectorAll('[data-ac-carousel]').forEach(function (grid) {
     var slots = Array.prototype.slice.call(grid.children);
     if (slots.length < 2) return;
+    // carrossel sem link/botão dentro (ex.: Celebrações): enquanto ele rola para o lado, vira
+    // uma parada do Tab com nome, para quem usa teclado conseguir rolar com as setas
+    if (!grid.querySelector('a, button, input, [tabindex]')) {
+      var sec = grid.closest('section'), h = sec && sec.querySelector('h2');
+      grid.setAttribute('aria-label', (h ? h.textContent.trim() : 'Carrossel') + ' (role para o lado)');
+      var focusable = function () {
+        if (grid.scrollWidth > grid.clientWidth + 1) { grid.tabIndex = 0; grid.setAttribute('role', 'region'); }
+        else { grid.removeAttribute('tabindex'); grid.removeAttribute('role'); }
+      };
+      focusable();
+      window.addEventListener('resize', focusable);
+    }
     var nav = document.createElement('div');
     nav.className = 'carousel-nav';
     nav.innerHTML =
@@ -1990,7 +2031,9 @@
       queued = false;
       header.classList.toggle('is-solid', rest.getBoundingClientRect().top < header.offsetHeight);
     }
-    function queue() { if (!queued) { queued = true; requestAnimationFrame(check); } }
+    // com o Lenis, lê no começo do quadro do GSAP (antes das escritas), como as entradas acima
+    if (lenis) gsap.ticker.add(function () { if (queued) check(); }, false, true);
+    function queue() { if (!queued) { queued = true; if (!lenis) requestAnimationFrame(check); } }
     window.addEventListener('scroll', queue, { passive: true });
     window.addEventListener('resize', queue);
     check();
