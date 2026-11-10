@@ -1,5 +1,5 @@
 {
-  "buildCommand": "sed -i \"s/__V__/${VERCEL_GIT_COMMIT_SHA:-dev}/g\" index.html privacidade.html && rm -f vercel.json",
+  "buildCommand": "sed -i \"s/__V__/${VERCEL_GIT_COMMIT_SHA:-dev}/g\" index.html privacidade.html 404.html && rm -f vercel.json",
   "outputDirectory": ".",
   "headers": [
     {
