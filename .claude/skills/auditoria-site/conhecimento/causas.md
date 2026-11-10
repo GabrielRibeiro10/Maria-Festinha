@@ -59,5 +59,6 @@ Achar a causa: `causas.js --secao=#id --aparelho=celular-fraco` e confirmar desl
   3. perfil de JS com chamadores (scripts de terceiros também aparecem: `map.js` do Google Maps);
   4. contar requisições com a página parada (pré-carregamentos com tempo).
 - **Ordem do que mais rendeu (Maria Festinha):** texto letra a letra → sequência de quadros (incluindo o
-  pré-carregamento) → iframe do mapa. Juntos: computador fraco 12,7 → 0,7-0,9 s, tablet 6,9 → 0,2-0,35 s, celular
-  7,3 → 0,4-0,5 s. Animações presas à rolagem e Lenis renderam pouco ou pioraram.
+  pré-carregamento; **sem congelar**: 1/4 dos quadros em 60% da resolução, ver `efeitos.md`) → iframe do mapa.
+  Juntos, com o vídeo da abertura andando: computador fraco 12,7 → 0,4-0,5 s, tablet 6,9 → ~0,1-0,2 s, celular
+  7,3 → ~0,05-0,2 s. Animações presas à rolagem e Lenis renderam pouco ou pioraram.

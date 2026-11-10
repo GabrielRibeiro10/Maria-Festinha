@@ -60,6 +60,12 @@ vê o site igual. **A auditoria garante isso em todo site, sem perguntar.**
   detecção própria, **troque pelo modelo** (detecção própria mais fraca já deixou celular fraco sem modo leve) e faça
   o código do site seguir a classe `leve` e o evento `leve:liga`. Se o site usava outro nome de classe, troque para
   `leve` no CSS e no JS. Detecção nova melhor que o modelo: melhore o **modelo** (e o portfólio), não só o site.
+- **VÍDEO NUNCA SAI NEM CONGELA NO MODO LEVE** (regra do dono): vídeo de fundo, vídeo dentro do site e "vídeo" feito
+  de quadros que anda com a rolagem (GSAP ScrollTrigger/sequência de quadros em canvas) continuam aparecendo e se
+  mexendo no celular e no PC fraco. No modo leve eles ficam **mais leves**, não parados: arquivo de resolução menor
+  (ex.: 720p), canvas em resolução menor (ex.: 60%), 1 a cada N quadros (o ritmo do vídeo original quando os quadros
+  foram interpolados), menos quadros na memória e decodificações ao mesmo tempo, sem pré-download de tudo (só o que a
+  rolagem pede), tocar só com a seção na tela e pausar fora dela. Para bater a meta, amenize **os outros efeitos**.
 - **Todo efeito** precisa: checar `document.documentElement.classList.contains('leve')` ao começar, **parar quando o
   modo ligar no meio do uso** (`document.addEventListener('leve:liga', ...)`) e respeitar `prefers-reduced-motion`.
   CSS: regras `.leve ...`. O passo 3b decide o que fica parado.
@@ -117,10 +123,10 @@ vê o site igual. **A auditoria garante isso em todo site, sem perguntar.**
       - parallax → posição fixa;
       - letras/palavras animadas uma a uma → texto inteiro de uma vez;
       - brilhos, partículas, neon, máscaras, desfoques, mistura de cores, animações infinitas → parados ou desligados;
-      - sequência de quadros em canvas → um quadro fixo (ou o vídeo/pôster que o site já usa no celular), sem baixar os
-        outros quadros;
+      - vídeo e sequência de quadros presa à rolagem → **continua andando**, em versão leve (ver "Modo leve": menos
+        quadros, resolução menor, sem pré-download). Nunca parado nem trocado por imagem;
       - rolagem suave (Lenis) → rolagem nativa;
-      - 3D/WebGL → versão desenhada/imagem parada.
+      - 3D/WebGL (que não seja vídeo) → versão desenhada/imagem parada.
       Pare quando o aparelho fraco bater a meta. Não mexa no que não fez diferença na medição.
    4. Cada efeito simplificado: checa o modo leve ao começar **e** para se ele ligar no meio do uso; respeita
       `prefers-reduced-motion`.
