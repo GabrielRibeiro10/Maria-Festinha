@@ -23,7 +23,7 @@ Atualize a cada entrada nova (arquivo · título · data · status).
 - muitas-camadas · will-change demais · 2026-11-10 · observação
 
 ## Causas de travada (`causas.md`)
-- tabela rápida (15 sintomas → causa → correção) · 2026-11-10 · confirmado
+- tabela rápida (16 sintomas → causa → correção) · 2026-11-10 · confirmado
 - leitura de posição depois de escrita (layout forçado) · 2026-11-10 · confirmado
 - aparelho fraco lento em tudo: como achar o que pesa · 2026-11-10 · confirmado
 

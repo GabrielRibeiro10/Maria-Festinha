@@ -1195,6 +1195,12 @@
     var o = acOptions(el);
     var targets = o.stagger > 0 && el.children.length ? Array.prototype.slice.call(el.children) : [el];
     var horizontal = o.direction === 'horizontal';
+    // carrossel do celular: anima o card de DENTRO de cada vaga, nunca a vaga. A vaga é o ponto de encaixe do
+    // carrossel (scroll-snap): deslocada 100px pela entrada, o navegador rolava o carrossel 100px para
+    // "acompanhar"; quando a entrada terminava, o 1º card aparecia encostado à esquerda e só depois voltava ao meio
+    if (el.hasAttribute('data-ac-carousel') && horizontal) {
+      targets = targets.map(function (slot) { return slot.firstElementChild || slot; });
+    }
     var axis = horizontal ? 'x' : 'y';
     var sign = o.reverse ? -1 : 1;
     var mask = AC_WIPES[o.wipe];

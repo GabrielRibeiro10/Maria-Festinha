@@ -138,6 +138,8 @@ vê o site igual. **A auditoria garante isso em todo site, sem perguntar.**
 4. **Teste como cliente** (tocar/clicar em tudo, links internos, rolar gravando, girar a tela, voltar/avançar):
    `node .claude/skills/auditoria-site/scripts/cliente.js --fotos=<scratchpad>/cliente`
    `node .claude/skills/auditoria-site/scripts/montagem.js <scratchpad>/cliente`
+   **Carrosséis com imã (`scroll-snap`) no celular:** meça o `scrollLeft` de cada um do carregamento até a entrada
+   terminar; tem que ficar 0 e o 1º card centralizado (ver `causas.md`).
    **Olhe as pranchas** (Read nas imagens): animação pela metade, elemento sumido, sobreposto, piscando, texto por cima
    de texto, faixa de cor errada, emenda entre seções. Repita com `--aparelhos=celular-fraco,pc-fraco`. Aviso do script
    que pareça falso: confirme no navegador antes de descartar (ver `ambiente-de-teste.md`).
