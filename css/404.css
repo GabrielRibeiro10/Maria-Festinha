@@ -1,0 +1,71 @@
+/* Página 404: mesmo visual do site (lilás, dourado, flores e balão). Só CSS, sem JavaScript.
+   Usa as cores, a fonte e os botões do style.css. */
+.nf-body {
+  min-height: 100vh; min-height: 100svh;
+  background:
+    radial-gradient(60% 50% at 15% 10%, rgba(255, 255, 255, .85) 0%, rgba(255, 255, 255, 0) 70%),
+    radial-gradient(50% 45% at 90% 85%, rgba(241, 213, 140, .35) 0%, rgba(241, 213, 140, 0) 70%),
+    linear-gradient(160deg, var(--lilac-100) 0%, var(--lilac-200) 55%, var(--lilac-300) 100%);
+  color: var(--text);
+}
+.nf {
+  position: relative; overflow: hidden;
+  min-height: 100vh; min-height: 100svh;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 32px 16px 24px; box-sizing: border-box;
+}
+
+/* flores nos cantos de baixo (as mesmas da faixa "Vamos celebrar juntos?") */
+.nf-flores { position: absolute; bottom: -4%; width: min(42vw, 420px); height: auto; pointer-events: none; z-index: 0;
+  filter: drop-shadow(0 10px 18px rgba(106, 78, 160, .2)); opacity: .9; }
+.nf-flores-l { left: -6%; }
+.nf-flores-r { right: -6%; scale: -1 1; }
+
+.nf-card {
+  position: relative; z-index: 1;
+  width: 100%; max-width: 560px; box-sizing: border-box;
+  padding: 28px 28px 30px; text-align: center;
+  background: rgba(255, 255, 255, .8);
+  border: 1px solid var(--card-border); border-radius: 28px;
+  box-shadow: var(--shadow-card);
+}
+.nf-logo { display: inline-block; border-radius: 50%; }
+.nf-logo img { display: block; width: 96px; height: 96px; }
+
+/* "4 [balão] 4": o balão dourado do site faz o papel do zero */
+.nf-numero {
+  display: flex; align-items: center; justify-content: center; gap: 4px;
+  margin: 6px 0 2px;
+  font-size: clamp(84px, 22vw, 132px); font-weight: 600; line-height: 1;
+  background: var(--gold-text); -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.nf-balao { width: .62em; height: auto; margin: 0 2px; transform-origin: 50% 100%;
+  animation: nf-flutua 4.5s ease-in-out infinite; }
+@keyframes nf-flutua {
+  0%, 100% { transform: translateY(0) rotate(-4deg); }
+  50% { transform: translateY(-10px) rotate(4deg); }
+}
+
+.nf-kicker { margin: 0 0 6px; font-size: 12px; letter-spacing: .16em; text-transform: uppercase; color: var(--gold-700); font-weight: 600; }
+.nf-titulo { margin: 0 0 10px; font-size: clamp(24px, 6vw, 32px); font-weight: 500; line-height: 1.2; color: var(--plum); }
+.nf-texto { margin: 0 auto 22px; max-width: 42ch; font-size: 15px; line-height: 1.6; color: var(--muted); }
+
+.nf-acoes { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; }
+.nf-acoes .btn { min-height: 44px; box-sizing: border-box; }
+
+.nf-links { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 18px; margin-top: 20px; }
+.nf-links a { display: inline-block; padding: 8px 2px; font-size: 14px; color: var(--lilac-700); text-decoration: none; }
+.nf-links a:hover { color: var(--gold-700); text-decoration: underline; text-underline-offset: 3px; }
+
+.nf-rodape { position: relative; z-index: 1; margin: 22px 0 0; padding: 4px 14px; font-size: 12.5px; color: var(--muted); text-align: center;
+  background: rgba(255, 255, 255, .78); border-radius: 999px; }   /* legível por cima das flores */
+.nf-rodape a { display: inline-block; padding: 6px 0; color: var(--lilac-700); }
+
+@media (max-width: 420px) {
+  .nf-card { padding: 22px 18px 24px; border-radius: 22px; }
+  .nf-acoes .btn { width: 100%; }
+  .nf-flores { width: 56vw; bottom: -2%; opacity: .7; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nf-balao { animation: none; }
+}
